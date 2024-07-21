@@ -5,6 +5,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
+import javax.imageio.IIOException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Main {
@@ -29,17 +31,16 @@ public class Main {
     public static void main(String[] args) {
 
         Main main = new Main();
-        JCommander jCommander = JCommander.newBuilder()
-                .addObject(main)
-                .build();
+        JCommander jCommander = JCommander.newBuilder().addObject(main).build();
         try {
             jCommander.parse(args);
+            new ConsoleInterface(inputFiles, outputPath, prefix, append, fullFormat, shortFormat).run();
         } catch (ParameterException e) {
             System.err.println(e.getMessage());
             jCommander.usage();
-            return;
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
         }
 
-        new ConsoleInterface(inputFiles, outputPath, prefix, append, fullFormat, shortFormat).run();
     }
 }

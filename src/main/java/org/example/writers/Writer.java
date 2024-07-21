@@ -1,34 +1,45 @@
 package org.example.writers;
 
-import lombok.Setter;
 import org.example.models.Type;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Properties;
 
 public class Writer {
-    private String path = ".";
-    private String prefix = "";
+    private String path;
+    private String prefix;
     private Boolean append;
+    Properties properties;
 
-    private final String integerFileName = "integers.txt";
-    private final String floatFileName = "floats.txt";
-    private final String stringFileName = "strings.txt";
+    public Writer() throws IOException {
+        path = ".";
+        prefix = "";
 
-    public void write(Type type, String str) {
-        String fileName = getFileName(type);
-        if (fileName == null) {
-            System.err.println("Unknown type: " + type);
-            return;
+        properties = new Properties();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("application.properties")) {
+            if (is == null) {
+                throw new IOException("application.properties file not found");
+            }
+            properties.load(is);
         }
+    }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(Paths.get(path, prefix + fileName).toFile(), true))) {
-            writer.write(str);
-            writer.newLine();
-        } catch (IOException e) {
-            System.err.println("Error writing to file: " + e.getMessage());
+    public void write(HashMap<Type, ArrayList<String>> map) throws IOException {
+        for (HashMap.Entry<Type, ArrayList<String>> entry : map.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) throw new IOException("Unknown type");
+            String fileName = getFileName(entry.getKey());
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(Paths.get(path, prefix + fileName).toFile(), append))) {
+                for (String str : entry.getValue()) {
+                    writer.write(str);
+                    writer.newLine();
+                }
+            }
         }
     }
 
@@ -48,16 +59,16 @@ public class Writer {
         this.append = append;
     }
 
-    private String getFileName(Type type) {
+    private String getFileName(Type type) throws IOException {
         switch (type) {
             case INTEGER:
-                return integerFileName;
+                return properties.getProperty("app.int");
             case FLOAT:
-                return floatFileName;
+                return properties.getProperty("app.float");
             case STRING:
-                return stringFileName;
+                return properties.getProperty("app.string");
             default:
-                return null;
+                throw new IOException("Unknown type");
         }
     }
 }
